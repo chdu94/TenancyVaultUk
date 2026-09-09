@@ -66,8 +66,6 @@
       button:hover { background: #1d4ed8; }
       .btn-success { background: var(--success); }
       .btn-success:hover { background: #047857; }
-      .reset-link { font-size: 0.8rem; color: #94a3b8; text-align: center; margin-top: 10px; cursor: pointer; display: block; }
-      .reset-link:hover { color: #ef4444; }
       
       .evidence-item { background: #f1f5f9; padding: 12px; border-radius: 6px; margin-top: 10px; font-size: 0.9rem; border-left: 3px solid var(--accent); }
     </style>
@@ -114,7 +112,6 @@
       <h2><span>3</span> Export Adjudicator Dossier</h2>
       <p style="margin-bottom: 10px;">Compile all saved room evidence into a formal PDF report ready for TDS, DPS, or MyDeposits.</p>
       <button onclick="generateAdjudicatorPDF()" class="btn-success">Download Timestamped PDF Document</button>
-      <span class="reset-link" onclick="resetTestLimits()">[Developer: Reset Test Limits]</span>
     </div>
 
     <script>
@@ -144,12 +141,6 @@
           localStorage.setItem('tv_pdfs_count', pdfsCount + 1);
         }
         return true;
-      }
-
-      function resetTestLimits() {
-        localStorage.removeItem('tv_rooms_count');
-        localStorage.removeItem('tv_pdfs_count');
-        alert("Test counters reset! You have your free allocations back.");
       }
 
       // Canvas-based image compression & EXIF timestamp generation
