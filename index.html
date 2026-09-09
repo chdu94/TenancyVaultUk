@@ -71,6 +71,8 @@
       .btn-success:hover { background: #047857; }
       .btn-secondary { background: #475569; }
       .btn-secondary:hover { background: #334155; }
+      .reset-link { font-size: 0.8rem; color: #94a3b8; text-align: center; margin-top: 10px; cursor: pointer; display: block; }
+      .reset-link:hover { color: #ef4444; }
       
       .evidence-item { background: #f1f5f9; padding: 12px; border-radius: 6px; margin-top: 10px; font-size: 0.9rem; border-left: 3px solid var(--accent); }
     </style>
@@ -85,13 +87,13 @@
     <!-- SECTION 1: Property & Address Lookup -->
     <div class="card">
       <h2><span>1</span> Property Details & UK Postcode</h2>
-      <label>Street Address</label>
+      <label>Street Address / House Number & Name</label>
       <input type="text" id="streetAddress" placeholder="e.g., Flat 4, 123 High Street">
       
-      <label>UK Postcode</label>
+      <label>UK Postcode & City/Town Lookup</label>
       <div class="row">
         <input type="text" id="postcode" placeholder="e.g., M1 1AA">
-        <button type="button" class="btn-secondary" onclick="lookupPostcode()">Lookup Address</button>
+        <button type="button" class="btn-secondary" onclick="lookupPostcode()">Lookup Town</button>
       </div>
     </div>
 
@@ -119,21 +121,27 @@
     <div class="card card-section-3">
       <h2><span>3</span> Export Adjudicator Dossier</h2>
       <p style="margin-bottom: 10px;">Compile all saved room evidence into a formal PDF report ready for TDS, DPS, or MyDeposits.</p>
-      <!-- Updated button text without the limit label -->
       <button onclick="generateAdjudicatorPDF()" class="btn-success">Download Timestamped PDF Document</button>
+      <span class="reset-link" onclick="resetTestLimits()">[Developer: Reset Test Limits]</span>
     </div>
 
     <script>
       const STRIPE_CHECKOUT_URL = "https://buy.stripe.com/9B6bJ27Ub7Zna5J5Ys77O00";
       let localEvidenceStore = [];
 
-      // Persistent check preventing bypass via page refreshes
+      // Independent limits: 2 free rooms AND 2 free PDF downloads tracked via cookies/localStorage
       function checkPaywallLimit(actionType) {
         let roomsCount = parseInt(localStorage.getItem('tv_rooms_count') || '0');
         let pdfsCount = parseInt(localStorage.getItem('tv_pdfs_count') || '0');
 
-        if (roomsCount >= 2 || pdfsCount >= 2) {
-          alert("You have reached your free limit. Upgrade to unlimited dispute protection for a £4.99 monthly subscription.");
+        if (actionType === 'room' && roomsCount >= 2) {
+          alert("You have reached your free room limit. Upgrade to unlimited dispute protection for a £4.99 monthly subscription.");
+          window.location.href = STRIPE_CHECKOUT_URL;
+          return false;
+        }
+
+        if (actionType === 'pdf' && pdfsCount >= 2) {
+          alert("You have reached your free PDF download limit. Upgrade to unlimited dispute protection for a £4.99 monthly subscription.");
           window.location.href = STRIPE_CHECKOUT_URL;
           return false;
         }
@@ -146,7 +154,14 @@
         return true;
       }
 
-      // Simple Postcode Lookup helper using postcodes.io public API
+      // Helper to easily clear your test counters during development
+      function resetTestLimits() {
+        localStorage.removeItem('tv_rooms_count');
+        localStorage.removeItem('tv_pdfs_count');
+        alert("Test counters reset! You now have your free rooms and PDF downloads back.");
+      }
+
+      // Postcode helper: auto-fills town/city while leaving street address editable
       async function lookupPostcode() {
         const pc = document.getElementById('postcode').value.trim();
         if (!pc) {
@@ -159,13 +174,14 @@
           if (data.status === 200 && data.result) {
             const r = data.result;
             const currentStreet = document.getElementById('streetAddress').value;
-            document.getElementById('streetAddress').value = `${currentStreet ? currentStreet + ', ' : ''}${r.admin_district}, ${r.region}`;
-            alert(`Postcode verified: ${r.postcode} (${r.admin_district})`);
+            // Autofills district/region neatly alongside the street
+            document.getElementById('streetAddress').value = `${currentStreet ? currentStreet + ', ' : ''}${r.admin_district || ''}, ${r.region || ''}`.replace(/,\s*,/g, ',');
+            alert(`Postcode area verified: ${r.postcode} (${r.admin_district})`);
           } else {
-            alert("Postcode not found. Please enter details manually.");
+            alert("Postcode not found. Please enter your address manually.");
           }
         } catch (e) {
-          alert("Lookup service unavailable. You can type the address manually.");
+          alert("Lookup service unavailable. Please enter your address manually.");
         }
       }
 
