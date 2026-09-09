@@ -50,9 +50,6 @@
         background: #fff;
       }
       textarea { resize: vertical; height: 75px; }
-      .row { display: flex; gap: 10px; }
-      .row input { flex: 2; }
-      .row button { flex: 1; margin-top: 0; }
       button {
         background: var(--accent);
         color: white;
@@ -69,8 +66,6 @@
       button:hover { background: #1d4ed8; }
       .btn-success { background: var(--success); }
       .btn-success:hover { background: #047857; }
-      .btn-secondary { background: #475569; }
-      .btn-secondary:hover { background: #334155; }
       .reset-link { font-size: 0.8rem; color: #94a3b8; text-align: center; margin-top: 10px; cursor: pointer; display: block; }
       .reset-link:hover { color: #ef4444; }
       
@@ -84,17 +79,14 @@
       <p>Adjudicator-Ready Deposit Dispute Evidence Manager</p>
     </div>
 
-    <!-- SECTION 1: Property & Address Lookup -->
+    <!-- SECTION 1: Property & Address Inputs -->
     <div class="card">
-      <h2><span>1</span> Property Details & UK Postcode</h2>
-      <label>Full Property Address (House Name/Number, Street, Town, Postcode)</label>
-      <textarea id="fullAddressInput" placeholder="Enter complete address manually or use postcode lookup below..."></textarea>
+      <h2><span>1</span> Property Details</h2>
+      <label>Street Address / House Name & Number</label>
+      <input type="text" id="streetAddress" placeholder="e.g., Flat 4, 123 High Street">
       
-      <label>Quick Postcode Lookup Helper</label>
-      <div class="row">
-        <input type="text" id="postcodeHelper" placeholder="e.g., SW1A 1AA">
-        <button type="button" class="btn-secondary" onclick="lookupPostcodeArea()">Find Location</button>
-      </div>
+      <label>Town / City & Postcode</label>
+      <input type="text" id="townPostcode" placeholder="e.g., Manchester, M1 1AA">
     </div>
 
     <!-- SECTION 2: Room & Evidence Capture -->
@@ -160,29 +152,6 @@
         alert("Test counters reset! You have your free allocations back.");
       }
 
-      // Streamlined helper that prefills area details into the main text box
-      async function lookupPostcodeArea() {
-        const pc = document.getElementById('postcodeHelper').value.trim();
-        if (!pc) {
-          alert("Please enter a postcode.");
-          return;
-        }
-        try {
-          const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(pc)}`);
-          const data = await res.json();
-          if (data.status === 200 && data.result) {
-            const r = data.result;
-            const addressBox = document.getElementById('fullAddressInput');
-            addressBox.value = `[House Number / Street Name], ${r.admin_district}, ${r.region}, ${r.postcode}`;
-            alert("Location template added! Please edit the bracketed house number/street name with your exact address.");
-          } else {
-            alert("Postcode not recognized. Please type your address manually.");
-          }
-        } catch (e) {
-          alert("Lookup service unavailable. Please type your address manually.");
-        }
-      }
-
       // Canvas-based image compression & EXIF timestamp generation
       function processUploadedImage(file, callback) {
         const reader = new FileReader();
@@ -220,13 +189,14 @@
       function addEvidenceRoom() {
         if (!checkPaywallLimit('room')) return;
 
-        const address = document.getElementById('fullAddressInput').value.trim();
+        const street = document.getElementById('streetAddress').value.trim();
+        const townPc = document.getElementById('townPostcode').value.trim();
         const room = document.getElementById('roomName').value.trim();
         const notes = document.getElementById('roomNotes').value.trim();
         const fileInput = document.getElementById('photoInput');
 
-        if (!address) {
-          alert("Please enter the full property address in Section 1.");
+        if (!street || !townPc) {
+          alert("Please fill out the complete Property Details in Section 1.");
           return;
         }
 
@@ -240,9 +210,11 @@
           return;
         }
 
+        const fullAddress = `${street}, ${townPc}`;
+
         processUploadedImage(fileInput.files[0], function(processed) {
           localEvidenceStore.push({
-            address: address,
+            address: fullAddress,
             room: room,
             notes: notes,
             image: processed.dataUrl,
