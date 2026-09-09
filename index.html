@@ -87,13 +87,13 @@
     <!-- SECTION 1: Property & Address Lookup -->
     <div class="card">
       <h2><span>1</span> Property Details & UK Postcode</h2>
-      <label>Street Address / House Number & Name</label>
-      <input type="text" id="streetAddress" placeholder="e.g., Flat 4, 123 High Street">
+      <label>Full Property Address (House Name/Number, Street, Town, Postcode)</label>
+      <textarea id="fullAddressInput" placeholder="Enter complete address manually or use postcode lookup below..."></textarea>
       
-      <label>UK Postcode & City/Town Lookup</label>
+      <label>Quick Postcode Lookup Helper</label>
       <div class="row">
-        <input type="text" id="postcode" placeholder="e.g., M1 1AA">
-        <button type="button" class="btn-secondary" onclick="lookupPostcode()">Lookup Town</button>
+        <input type="text" id="postcodeHelper" placeholder="e.g., SW1A 1AA">
+        <button type="button" class="btn-secondary" onclick="lookupPostcodeArea()">Find Location</button>
       </div>
     </div>
 
@@ -129,7 +129,7 @@
       const STRIPE_CHECKOUT_URL = "https://buy.stripe.com/9B6bJ27Ub7Zna5J5Ys77O00";
       let localEvidenceStore = [];
 
-      // Independent limits: 2 free rooms AND 2 free PDF downloads tracked via cookies/localStorage
+      // Independent limits: 2 free rooms AND 2 free PDF downloads
       function checkPaywallLimit(actionType) {
         let roomsCount = parseInt(localStorage.getItem('tv_rooms_count') || '0');
         let pdfsCount = parseInt(localStorage.getItem('tv_pdfs_count') || '0');
@@ -154,18 +154,17 @@
         return true;
       }
 
-      // Helper to easily clear your test counters during development
       function resetTestLimits() {
         localStorage.removeItem('tv_rooms_count');
         localStorage.removeItem('tv_pdfs_count');
-        alert("Test counters reset! You now have your free rooms and PDF downloads back.");
+        alert("Test counters reset! You have your free allocations back.");
       }
 
-      // Postcode helper: auto-fills town/city while leaving street address editable
-      async function lookupPostcode() {
-        const pc = document.getElementById('postcode').value.trim();
+      // Streamlined helper that prefills area details into the main text box
+      async function lookupPostcodeArea() {
+        const pc = document.getElementById('postcodeHelper').value.trim();
         if (!pc) {
-          alert("Please enter a valid UK postcode first.");
+          alert("Please enter a postcode.");
           return;
         }
         try {
@@ -173,15 +172,14 @@
           const data = await res.json();
           if (data.status === 200 && data.result) {
             const r = data.result;
-            const currentStreet = document.getElementById('streetAddress').value;
-            // Autofills district/region neatly alongside the street
-            document.getElementById('streetAddress').value = `${currentStreet ? currentStreet + ', ' : ''}${r.admin_district || ''}, ${r.region || ''}`.replace(/,\s*,/g, ',');
-            alert(`Postcode area verified: ${r.postcode} (${r.admin_district})`);
+            const addressBox = document.getElementById('fullAddressInput');
+            addressBox.value = `[House Number / Street Name], ${r.admin_district}, ${r.region}, ${r.postcode}`;
+            alert("Location template added! Please edit the bracketed house number/street name with your exact address.");
           } else {
-            alert("Postcode not found. Please enter your address manually.");
+            alert("Postcode not recognized. Please type your address manually.");
           }
         } catch (e) {
-          alert("Lookup service unavailable. Please enter your address manually.");
+          alert("Lookup service unavailable. Please type your address manually.");
         }
       }
 
@@ -222,14 +220,18 @@
       function addEvidenceRoom() {
         if (!checkPaywallLimit('room')) return;
 
-        const street = document.getElementById('streetAddress').value.trim();
-        const pc = document.getElementById('postcode').value.trim();
+        const address = document.getElementById('fullAddressInput').value.trim();
         const room = document.getElementById('roomName').value.trim();
         const notes = document.getElementById('roomNotes').value.trim();
         const fileInput = document.getElementById('photoInput');
 
-        if (!street || !pc || !room) {
-          alert("Please complete Section 1 (Street & Postcode) and enter a Room Name.");
+        if (!address) {
+          alert("Please enter the full property address in Section 1.");
+          return;
+        }
+
+        if (!room) {
+          alert("Please enter a Room / Area Name.");
           return;
         }
 
@@ -238,11 +240,9 @@
           return;
         }
 
-        const fullAddress = `${street}, ${pc}`;
-
         processUploadedImage(fileInput.files[0], function(processed) {
           localEvidenceStore.push({
-            address: fullAddress,
+            address: address,
             room: room,
             notes: notes,
             image: processed.dataUrl,
@@ -252,7 +252,7 @@
           updatePreviewUI();
           alert("Room and evidence saved successfully!");
 
-          // Clear room fields for next entry
+          // Clear room fields for next entry (keeps address intact)
           document.getElementById('roomName').value = '';
           document.getElementById('roomNotes').value = '';
           document.getElementById('photoInput').value = '';
