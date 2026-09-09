@@ -108,7 +108,7 @@
     </div>
 
     <div class="intro-box">
-      <strong>How to use this tool:</strong> Start by entering your property details in <strong>Box 1</strong>. Proceed to <strong>Box 2</strong> to log your rooms or items, record condition notes, select whether it is moving in or moving out, and upload photographs. Finally, download your formal, timestamped PDF dossier in <strong>Box 3</strong>, fully prepared to secure your deposit with tenancy protection schemes.
+      <strong>How to use this tool:</strong> Start by entering your property details in <strong>Box 1</strong>. Proceed to <strong>Box 2</strong> to log your rooms or items, check your inspection stage, record condition notes, and upload photographs. Finally, download your formal, timestamped PDF dossier in <strong>Box 3</strong>, fully prepared to secure your deposit with tenancy protection schemes.
     </div>
 
     <!-- SECTION 1: Property & Address Inputs -->
@@ -158,8 +158,23 @@
       const STRIPE_CHECKOUT_URL = "https://buy.stripe.com/9B6bJ27Ub7Zna5J5Ys77O00";
       let localEvidenceStore = [];
 
-      // Independent limits: 2 free rooms AND 2 free PDF downloads
+      // Check URL parameters on load to see if user just returned from a successful Stripe payment
+      window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('unlocked') === 'true') {
+          localStorage.setItem('tv_unlimited_access', 'true');
+          alert("Payment successful! Your TenancyVault account has been upgraded to unlimited access.");
+          // Clean the URL bar without reloading
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      });
+
+      // Independent limits: 2 free rooms AND 2 free PDF downloads (unless unlocked)
       function checkPaywallLimit(actionType) {
+        if (localStorage.getItem('tv_unlimited_access') === 'true') {
+          return true; // Bypass limits for paid users
+        }
+
         let roomsCount = parseInt(localStorage.getItem('tv_rooms_count') || '0');
         let pdfsCount = parseInt(localStorage.getItem('tv_pdfs_count') || '0');
 
@@ -304,7 +319,7 @@
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(16);
-        doc.text("Tenancy Deposit Dispute Evidence Dossier", 14, 20);
+        doc.text("TenancyDeposit Dispute Evidence Dossier", 14, 20);
 
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
@@ -313,6 +328,7 @@
         doc.line(14, 35, 196, 35);
 
         let yPos = 42;
+        localEvidenceStore.objectforEach = null; // safe check
         localEvidenceStore.forEach((item, index) => {
           if (yPos > 230) {
             doc.addPage();
