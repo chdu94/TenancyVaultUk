@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TenancyVault UK - Deposit Dispute Evidence PWA</title>
-    <!-- jsPDF Library for Adjudicator-Ready PDF Generation -->
+    <!-- jsPDF Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
       :root {
@@ -18,7 +18,7 @@
       }
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        max-width: 700px;
+        max-width: 650px;
         margin: 0 auto;
         padding: 20px;
         color: var(--text);
@@ -29,13 +29,17 @@
         background: var(--card-bg);
         padding: 24px;
         border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         margin-bottom: 20px;
+        border-top: 4px solid var(--accent);
       }
-      h1 { font-size: 1.75rem; color: var(--primary); margin-top: 0; margin-bottom: 8px; }
-      h2 { font-size: 1.25rem; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; }
-      p { color: #64748b; margin-bottom: 20px; }
-      label { display: block; font-weight: 600; font-size: 0.9rem; margin-top: 12px; margin-bottom: 4px; color: #334155; }
+      .card-section-2 { border-top-color: #d97706; }
+      .card-section-3 { border-top-color: var(--success); }
+      
+      h1 { font-size: 1.6rem; color: var(--primary); margin-top: 0; margin-bottom: 4px; }
+      h2 { font-size: 1.15rem; color: var(--primary); margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+      p { color: #64748b; font-size: 0.95rem; margin-bottom: 16px; }
+      label { display: block; font-weight: 600; font-size: 0.85rem; margin-top: 10px; margin-bottom: 4px; color: #334155; }
       input[type="text"], input[type="file"], textarea {
         width: 100%;
         padding: 10px;
@@ -45,7 +49,10 @@
         font-size: 1rem;
         background: #fff;
       }
-      textarea { resize: vertical; height: 80px; }
+      textarea { resize: vertical; height: 75px; }
+      .row { display: flex; gap: 10px; }
+      .row input { flex: 2; }
+      .row button { flex: 1; margin-top: 0; }
       button {
         background: var(--accent);
         color: white;
@@ -56,55 +63,76 @@
         font-size: 1rem;
         font-weight: 600;
         width: 100%;
-        margin-top: 16px;
+        margin-top: 14px;
         transition: background 0.2s;
       }
       button:hover { background: #1d4ed8; }
       .btn-success { background: var(--success); }
       .btn-success:hover { background: #047857; }
-      .evidence-preview-list { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px; }
-      .evidence-item { background: #f1f5f9; padding: 12px; border-radius: 6px; margin-bottom: 10px; font-size: 0.9rem; }
+      .btn-secondary { background: #475569; }
+      .btn-secondary:hover { background: #334155; }
+      
+      .evidence-item { background: #f1f5f9; padding: 12px; border-radius: 6px; margin-top: 10px; font-size: 0.9rem; border-left: 3px solid var(--accent); }
     </style>
 </head>
 <body>
 
-    <div class="card">
+    <div style="text-align: center; margin-bottom: 24px;">
       <h1>TenancyVault UK</h1>
-      <p>UK-compliant deposit dispute evidence manager with EXIF timestamps & adjudicator-ready PDF output.</p>
+      <p>Adjudicator-Ready Deposit Dispute Evidence Manager</p>
+    </div>
+
+    <!-- SECTION 1: Property & Address Lookup -->
+    <div class="card">
+      <h2><span>1</span> Property Details & UK Postcode</h2>
+      <label>Street Address</label>
+      <input type="text" id="streetAddress" placeholder="e.g., Flat 4, 123 High Street">
       
-      <label>UK Property Address</label>
-      <input type="text" id="propertyAddress" placeholder="e.g., Flat 4, 123 High Street, Manchester, M1 1AA">
-
-      <label>Room / Area Name</label>
-      <input type="text" id="roomName" placeholder="e.g., Living Room / Kitchen">
-
-      <label>Condition Notes / Description</label>
-      <textarea id="roomNotes" placeholder="Describe condition, scuffs, damages, or cleanliness standards..."></textarea>
-
-      <label>Upload Evidence Photo (Compressed Automatically)</label>
-      <input type="file" id="photoInput" accept="image/*">
-
-      <button onclick="addEvidenceRoom()">Save Room & Evidence</button>
-      <button onclick="generateAdjudicatorPDF()" class="btn-success">Download Adjudicator PDF Dossier (£4.99/mo limit)</button>
-
-      <div class="evidence-preview-list" id="previewList">
-        <strong>Recorded Evidence Units:</strong>
-        <p id="emptyState" style="font-style: italic; color: #94a3b8; margin-top: 5px;">No rooms added yet.</p>
+      <label>UK Postcode</label>
+      <div class="row">
+        <input type="text" id="postcode" placeholder="e.g., M1 1AA">
+        <button type="button" class="btn-secondary" onclick="lookupPostcode()">Lookup Address</button>
       </div>
     </div>
 
+    <!-- SECTION 2: Room & Evidence Capture -->
+    <div class="card card-section-2">
+      <h2><span>2</span> Room Condition & Photo Evidence</h2>
+      <label>Room / Area Name</label>
+      <input type="text" id="roomName" placeholder="e.g., Living Room / Kitchen">
+
+      <label>Condition Notes / Damages</label>
+      <textarea id="roomNotes" placeholder="Note cleanliness, scuffs, or appliance condition..."></textarea>
+
+      <label>Upload Condition Photo (Auto-Compressed)</label>
+      <input type="file" id="photoInput" accept="image/*">
+
+      <button onclick="addEvidenceRoom()">Save Room Evidence</button>
+
+      <div id="previewList" style="margin-top: 15px;">
+        <strong style="font-size: 0.9rem; color: #475569;">Saved Rooms (0):</strong>
+        <p style="font-style: italic; color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">No rooms saved yet.</p>
+      </div>
+    </div>
+
+    <!-- SECTION 3: PDF Dossier Export -->
+    <div class="card card-section-3">
+      <h2><span>3</span> Export Adjudicator Dossier</h2>
+      <p style="margin-bottom: 10px;">Compile all saved room evidence into a formal PDF report ready for TDS, DPS, or MyDeposits.</p>
+      <button onclick="generateAdjudicatorPDF()" class="btn-success">Download Adjudicator PDF Dossier (£4.99/mo limit)</button>
+    </div>
+
     <script>
-      // Freemium & Stripe Configuration
       const STRIPE_CHECKOUT_URL = "https://buy.stripe.com/9B6bJ27Ub7Zna5J5Ys77O00";
       let localEvidenceStore = [];
 
-      // Freemium Limit Check (2 Rooms OR 2 PDFs)
+      // Freemium limit check with updated text (brackets removed)
       function checkPaywallLimit(actionType) {
         let roomsCount = parseInt(localStorage.getItem('tv_rooms_count') || '0');
         let pdfsCount = parseInt(localStorage.getItem('tv_pdfs_count') || '0');
 
         if (roomsCount >= 2 || pdfsCount >= 2) {
-          alert("You have reached your free limit (2 Rooms or 2 PDFs). Upgrade to unlimited dispute protection for a £4.99 monthly subscription.");
+          alert("You have reached your free limit. Upgrade to unlimited dispute protection for a £4.99 monthly subscription.");
           window.location.href = STRIPE_CHECKOUT_URL;
           return false;
         }
@@ -117,7 +145,30 @@
         return true;
       }
 
-      // Canvas-based Image Compression & Unique EXIF Timestamp Generator (Prevents mobile crashes)
+      // Simple Postcode Lookup helper using postcodes.io public API
+      async function lookupPostcode() {
+        const pc = document.getElementById('postcode').value.trim();
+        if (!pc) {
+          alert("Please enter a valid UK postcode first.");
+          return;
+        }
+        try {
+          const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(pc)}`);
+          const data = await res.json();
+          if (data.status === 200 && data.result) {
+            const r = data.result;
+            const currentStreet = document.getElementById('streetAddress').value;
+            document.getElementById('streetAddress').value = `${currentStreet ? currentStreet + ', ' : ''}${r.admin_district}, ${r.region}`;
+            alert(`Postcode verified: ${r.postcode} (${r.admin_district})`);
+          } else {
+            alert("Postcode not found. Please enter details manually.");
+          }
+        } catch (e) {
+          alert("Lookup service unavailable. You can type the address manually.");
+        }
+      }
+
+      // Canvas-based image compression & EXIF timestamp generation
       function processUploadedImage(file, callback) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -140,9 +191,7 @@
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Compress to JPEG to protect mobile browser memory
             const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
-            // Generate distinct timestamp for evidence audit logs
             const uniqueTimestamp = new Date().toUTCString();
 
             callback({ dataUrl: compressedDataUrl, timestamp: uniqueTimestamp });
@@ -152,65 +201,67 @@
         reader.readAsDataURL(file);
       }
 
-      // Add Room Handler
+      // Save Room Action from Section 2
       function addEvidenceRoom() {
         if (!checkPaywallLimit('room')) return;
 
-        const address = document.getElementById('propertyAddress').value.trim();
+        const street = document.getElementById('streetAddress').value.trim();
+        const pc = document.getElementById('postcode').value.trim();
         const room = document.getElementById('roomName').value.trim();
         const notes = document.getElementById('roomNotes').value.trim();
         const fileInput = document.getElementById('photoInput');
 
-        if (!address || !room) {
-          alert("Please fill out the UK Property Address and Room Name.");
+        if (!street || !pc || !room) {
+          alert("Please complete Section 1 (Street & Postcode) and enter a Room Name.");
           return;
         }
 
         if (fileInput.files.length === 0) {
-          alert("Please attach a condition photo for this evidence record.");
+          alert("Please upload a condition photo for this room.");
           return;
         }
 
-        processUploadedImage(fileInput.files[0], function(processedImage) {
+        const fullAddress = `${street}, ${pc}`;
+
+        processUploadedImage(fileInput.files[0], function(processed) {
           localEvidenceStore.push({
-            address: address,
+            address: fullAddress,
             room: room,
             notes: notes,
-            image: processedImage.dataUrl,
-            timestamp: processedImage.timestamp
+            image: processed.dataUrl,
+            timestamp: processed.timestamp
           });
 
           updatePreviewUI();
-          alert("Evidence room recorded successfully with EXIF timestamp!");
-          
-          // Clear inputs for next entry
+          alert("Room and evidence saved successfully!");
+
+          // Clear room fields for next entry
           document.getElementById('roomName').value = '';
           document.getElementById('roomNotes').value = '';
           document.getElementById('photoInput').value = '';
         });
       }
 
-      // Update UI List
       function updatePreviewUI() {
-        const listContainer = document.getElementById('previewList');
+        const container = document.getElementById('previewList');
         if (localEvidenceStore.length === 0) {
-          listContainer.innerHTML = '<strong>Recorded Evidence Units:</strong><p style="font-style: italic; color: #94a3b8; margin-top: 5px;">No rooms added yet.</p>';
+          container.innerHTML = '<strong style="font-size: 0.9rem; color: #475569;">Saved Rooms (0):</strong><p style="font-style: italic; color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">No rooms saved yet.</p>';
           return;
         }
 
-        let html = '<strong>Recorded Evidence Units:</strong>';
-        localEvidenceStore.forEach((item, index) => {
-          html += `<div class="evidence-item"><strong>#${index + 1} - ${item.room}</strong><br><small>${item.address}</small><br><em>Timestamp: ${item.timestamp}</em></div>`;
+        let html = `<strong style="font-size: 0.9rem; color: #475569;">Saved Rooms (${localEvidenceStore.length}):</strong>`;
+        localEvidenceStore.forEach((item, idx) => {
+          html += `<div class="evidence-item"><strong>#${idx + 1} - ${item.room}</strong><br><small>${item.address}</small><br><em>Logged: ${item.timestamp}</em></div>`;
         });
-        listContainer.innerHTML = html;
+        container.innerHTML = html;
       }
 
-      // PDF Generation for Adjudicators (TDS / DPS / MyDeposits compliant layout)
+      // Generate PDF from Section 3
       function generateAdjudicatorPDF() {
         if (!checkPaywallLimit('pdf')) return;
 
         if (localEvidenceStore.length === 0) {
-          alert("Please add at least one evidence room before generating the PDF dossier.");
+          alert("Please save at least one room in Section 2 before generating the PDF.");
           return;
         }
 
@@ -218,42 +269,41 @@
         const doc = new jsPDF();
 
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-        doc.text("TenancyDeposit Dispute Evidence Dossier", 14, 20);
-        
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.text("Generated via TenancyVault UK - Adjudicator Ready Format", 14, 26);
-        doc.line(14, 30, 196, 30);
+        doc.setFontSize(16);
+        doc.text("Tenancy Deposit Dispute Evidence Dossier", 14, 20);
 
-        let yPos = 40;
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Property: ${localEvidenceStore[0].address}`, 14, 26);
+        doc.text(`Generated: ${new Date().toUTCString()}`, 14, 31);
+        doc.line(14, 35, 196, 35);
+
+        let yPos = 42;
         localEvidenceStore.forEach((item, index) => {
-          if (yPos > 240) {
+          if (yPos > 230) {
             doc.addPage();
             yPos = 20;
           }
 
           doc.setFont("helvetica", "bold");
-          doc.text(`Evidence Item ${index + 1}: ${item.room}`, 14, yPos);
+          doc.text(`Evidence Unit ${index + 1}: ${item.room}`, 14, yPos);
           yPos += 6;
 
           doc.setFont("helvetica", "normal");
-          doc.text(`Property: ${item.address}`, 14, yPos);
+          doc.text(`EXIF Timestamp: ${item.timestamp}`, 14, yPos);
           yPos += 6;
-          doc.text(`Logged Timestamp (EXIF): ${item.timestamp}`, 14, yPos);
-          yPos += 6;
-          doc.text(`Condition Notes: ${item.notes || 'None provided'}`, 14, yPos);
-          yPos += 10;
+          doc.text(`Notes: ${item.notes || 'None recorded'}`, 14, yPos);
+          yPos += 8;
 
           try {
-            doc.addImage(item.image, 'JPEG', 14, yPos, 60, 45);
-            yPos += 55;
-          } catch (err) {
+            doc.addImage(item.image, 'JPEG', 14, yPos, 50, 38);
+            yPos += 46;
+          } catch(e) {
             yPos += 10;
           }
         });
 
-        doc.save("TenancyVault_Dispute_Dossier.pdf");
+        doc.save("TenancyVault_Evidence_Dossier.pdf");
       }
     </script>
 </body>
